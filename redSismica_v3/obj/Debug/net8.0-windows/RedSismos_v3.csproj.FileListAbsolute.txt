@@ -1,0 +1,17 @@
+C:\Users\fermi\source\repos\RedSismos_v3\RedSismos_v3\obj\Debug\net8.0-windows\RedSismos_v3.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\fermi\source\repos\RedSismos_v3\RedSismos_v3\obj\Debug\net8.0-windows\RedSismos_v3.AssemblyInfoInputs.cache
+C:\Users\fermi\source\repos\RedSismos_v3\RedSismos_v3\obj\Debug\net8.0-windows\RedSismos_v3.AssemblyInfo.cs
+C:\Users\fermi\source\repos\RedSismos_v3\RedSismos_v3\obj\Debug\net8.0-windows\RedSismos_v3.csproj.CoreCompileInputs.cache
+C:\Users\fermi\source\repos\RedSismos_v3\RedSismos_v3\bin\Debug\net8.0-windows\RedSismos_v3.exe
+C:\Users\fermi\source\repos\RedSismos_v3\RedSismos_v3\bin\Debug\net8.0-windows\RedSismos_v3.deps.json
+C:\Users\fermi\source\repos\RedSismos_v3\RedSismos_v3\bin\Debug\net8.0-windows\RedSismos_v3.runtimeconfig.json
+C:\Users\fermi\source\repos\RedSismos_v3\RedSismos_v3\bin\Debug\net8.0-windows\RedSismos_v3.dll
+C:\Users\fermi\source\repos\RedSismos_v3\RedSismos_v3\bin\Debug\net8.0-windows\RedSismos_v3.pdb
+C:\Users\fermi\source\repos\RedSismos_v3\RedSismos_v3\obj\Debug\net8.0-windows\RedSismicaWinForms.PantRegistrarResultado.resources
+C:\Users\fermi\source\repos\RedSismos_v3\RedSismos_v3\obj\Debug\net8.0-windows\RedSismos_v3.csproj.GenerateResource.cache
+C:\Users\fermi\source\repos\RedSismos_v3\RedSismos_v3\obj\Debug\net8.0-windows\RedSismos_v3.dll
+C:\Users\fermi\source\repos\RedSismos_v3\RedSismos_v3\obj\Debug\net8.0-windows\refint\RedSismos_v3.dll
+C:\Users\fermi\source\repos\RedSismos_v3\RedSismos_v3\obj\Debug\net8.0-windows\RedSismos_v3.pdb
+C:\Users\fermi\source\repos\RedSismos_v3\RedSismos_v3\obj\Debug\net8.0-windows\RedSismos_v3.genruntimeconfig.cache
+C:\Users\fermi\source\repos\RedSismos_v3\RedSismos_v3\obj\Debug\net8.0-windows\ref\RedSismos_v3.dll
+C:\Users\fermi\source\repos\RedSismos_v3\RedSismos_v3\obj\Debug\net8.0-windows\RedSismos_v3.sourcelink.json
