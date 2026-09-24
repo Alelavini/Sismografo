@@ -267,7 +267,7 @@ namespace RedSismica
                     ev.getValorMagnitud().ToString("0.0", CultureInfo.CurrentCulture),
                     ev.getClasificacion().getNombre(),
                     $"{ev.getLatitudEpicentro():0.00}, {ev.getLongitudEpicentro():0.00}",
-                    ev.obtenerEstadoActual()?.getDescripcion());
+                    ev.obtenerEstadoActual().getNombre());
                 gridEventos.Rows[i].Tag = ev;
             }
             gridEventos.ClearSelection();
@@ -293,7 +293,7 @@ namespace RedSismica
             foreach (DataGridViewRow fila in gridEventos.Rows)
             {
                 var ev = (EventoSismico)fila.Tag!;
-                fila.Cells["estado"].Value = ev.obtenerEstadoActual()?.getDescripcion();
+                fila.Cells["estado"].Value = ev.obtenerEstadoActual().getNombre();
                 fila.Cells["magnitud"].Value = ev.getValorMagnitud().ToString("0.0", CultureInfo.CurrentCulture);
             }
         }
@@ -318,7 +318,7 @@ namespace RedSismica
             valoresDetalle["Hipocentro"].Text = $"{evento.getLatitudHipocentro():0.00}, {evento.getLongitudHipocentro():0.00}  -  {evento.getProfundidadHipocentro():0} km";
             valoresDetalle["Alcance"].Text = evento.getAlcance()?.getNombre() ?? "Sin cargar";
             valoresDetalle["Origen"].Text = evento.getOrigenDeGeneracion()?.getNombre() ?? "Sin cargar";
-            valoresDetalle["Estado"].Text = evento.obtenerEstadoActual()?.getDescripcion();
+            valoresDetalle["Estado"].Text = evento.obtenerEstadoActual().getNombre();
             valoresDetalle["Alcance"].ForeColor = evento.getAlcance() == null ? ColorError : ColorTexto;
             valoresDetalle["Origen"].ForeColor = evento.getOrigenDeGeneracion() == null ? ColorError : ColorTexto;
 
@@ -342,9 +342,9 @@ namespace RedSismica
             foreach (var cambio in evento.getCambiosDeEstado().Reverse())
             {
                 gridHistorial.Rows.Add(
-                    cambio.getEstado().getDescripcion(),
+                    cambio.getEstado().getNombre(),
                     cambio.getFechaHoraInicio().ToString("dd/MM HH:mm:ss"),
-                    cambio.getUsuario().getUsuario());
+                    cambio.getUsuario()?.getUsuario() ?? "sistema");
             }
         }
 

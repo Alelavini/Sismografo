@@ -7,9 +7,9 @@ namespace RedSismica
         private DateTime fechaHoraInicio;
         private DateTime? fechaHoraFin;
         private Estado estado;
-        private Usuario usuario;
+        private Usuario? usuario;
 
-        public CambioEstado(DateTime inicio, DateTime? fin, Estado estado, Usuario usuario)
+        public CambioEstado(DateTime inicio, DateTime? fin, Estado estado, Usuario? usuario)
         {
             this.fechaHoraInicio = inicio;
             this.fechaHoraFin = fin;
@@ -24,6 +24,6 @@ namespace RedSismica
         public DateTime getFechaHoraInicio() => fechaHoraInicio;
         public DateTime? getFechaHoraFin() => fechaHoraFin;
         public Estado getEstado() => estado;
-        public Usuario getUsuario() => usuario;
+        public Usuario? getUsuario() => usuario;
     }
 }

@@ -10,7 +10,7 @@ public class GestorRegistrarResultadoTests
     private GestorRegistrarResultado CrearGestor(List<EventoSismico>? eventos = null) =>
         new(new Sesion(DateTime.Now, analista), eventos);
 
-    private EventoSismico CrearEvento(DateTime fecha, string estado = Estado.AutoDetectado, bool datosCompletos = true)
+    private EventoSismico CrearEvento(DateTime fecha, bool yaConfirmado = false, bool datosCompletos = true)
     {
         var evento = new EventoSismico(fecha, -31.5, -68.5, 10, -31.5, -68.5, 12, 4.2);
         if (datosCompletos)
@@ -18,7 +18,11 @@ public class GestorRegistrarResultadoTests
             evento.setAlcance(new AlcanceSismo("Sismo local", "Sismo local"));
             evento.setOrigenDeGeneracion(new OrigenDeGeneracion("Interplaca", "Interplaca"));
         }
-        evento.setEstado(estado, analista);
+        if (yaConfirmado)
+        {
+            evento.bloquearEventoSismico(analista);
+            evento.confirmar(analista);
+        }
         return evento;
     }
 
@@ -28,7 +32,7 @@ public class GestorRegistrarResultadoTests
         var hoy = DateTime.Today;
         var tarde = CrearEvento(hoy.AddHours(10));
         var temprano = CrearEvento(hoy.AddHours(2));
-        var confirmado = CrearEvento(hoy.AddHours(5), Estado.Confirmado);
+        var confirmado = CrearEvento(hoy.AddHours(5), yaConfirmado: true);
         var gestor = CrearGestor(new() { tarde, confirmado, temprano });
 
         var lista = gestor.tomarRegistroResultadoRevisionManual();
@@ -63,9 +67,9 @@ public class GestorRegistrarResultadoTests
     }
 
     [Theory]
-    [InlineData(GestorRegistrarResultado.AccionConfirmar, Estado.Confirmado)]
-    [InlineData(GestorRegistrarResultado.AccionRechazar, Estado.Rechazado)]
-    [InlineData(GestorRegistrarResultado.AccionDerivar, Estado.DerivadoAExperto)]
+    [InlineData(GestorRegistrarResultado.AccionConfirmar, Confirmado.Nombre)]
+    [InlineData(GestorRegistrarResultado.AccionRechazar, Rechazado.Nombre)]
+    [InlineData(GestorRegistrarResultado.AccionDerivar, DerivadoAExperto.Nombre)]
     public void Registrar_resultado_cambia_el_estado_y_cierra_el_evento(string accion, string estadoEsperado)
     {
         var evento = CrearEvento(DateTime.Today);
@@ -91,10 +95,11 @@ public class GestorRegistrarResultadoTests
         gestor.tomarAccionConEvento(GestorRegistrarResultado.AccionRechazar);
 
         var historial = evento.getCambiosDeEstado();
-        Assert.Equal(new[] { Estado.AutoDetectado, Estado.BloqueadoEnRevision, Estado.Rechazado },
-                     historial.Select(ce => ce.getEstado().getDescripcion()));
+        Assert.Equal(new[] { AutoDetectado.Nombre, BloqueadoEnRevision.Nombre, Rechazado.Nombre },
+                     historial.Select(ce => ce.getEstado().getNombre()));
         Assert.Single(historial, ce => ce.sosActual());
-        Assert.All(historial, ce => Assert.Same(analista, ce.getUsuario()));
+        Assert.Null(historial[0].getUsuario()); // la detección la hace la red, no un analista
+        Assert.All(historial.Skip(1), ce => Assert.Same(analista, ce.getUsuario()));
     }
 
     [Fact]
@@ -143,10 +148,10 @@ public class GestorRegistrarResultadoTests
     [Fact]
     public void No_permite_seleccionar_eventos_ya_revisados()
     {
-        var evento = CrearEvento(DateTime.Today, Estado.Confirmado);
+        var evento = CrearEvento(DateTime.Today, yaConfirmado: true);
         var gestor = CrearGestor(new() { evento });
 
-        Assert.Throws<InvalidOperationException>(() => gestor.tomarSeleccionEvento(evento));
+        Assert.Throws<TransicionInvalidaException>(() => gestor.tomarSeleccionEvento(evento));
     }
 
     [Theory]

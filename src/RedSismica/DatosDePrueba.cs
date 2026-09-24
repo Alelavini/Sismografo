@@ -43,6 +43,7 @@ namespace RedSismica
             // Un evento que ya fue revisado: no debe aparecer en la lista
             var revisado = crear(hoy.AddHours(1), -33.02, -68.90, 25, -33.00, -68.88, 24, 3.3, usuario,
                                  "Sismo local", "Intraplaca", serie(uspallata, trillium, 3.8, 11.2, 0.3));
+            revisado.bloquearEventoSismico(usuario);
             revisado.confirmar(usuario);
             eventos.Add(revisado);
 
@@ -57,7 +58,6 @@ namespace RedSismica
             if (alcance != null) evento.setAlcance(new AlcanceSismo(alcance, alcance));
             if (origen != null) evento.setOrigenDeGeneracion(new OrigenDeGeneracion(origen, origen));
             foreach (var st in series) evento.agregarSerieTemporal(st);
-            evento.setEstado(Estado.AutoDetectado, usuario);
             return evento;
         }
 

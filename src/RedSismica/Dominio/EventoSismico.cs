@@ -9,7 +9,7 @@ namespace RedSismica
         private DateTime fechaHoraOcurrencia;
         private DateTime? fechaHoraFin;
 
-        private Estado? estadoActual;
+        private Estado estadoActual;
         private List<CambioEstado> cambiosDeEstado = new List<CambioEstado>();
         private List<SerieTemporal> seriesTemporales = new List<SerieTemporal>();
 
@@ -34,6 +34,10 @@ namespace RedSismica
             this.profHipocentro = profH;
             this.magnitud = MagnitudRichter.desdeValor(valorMagnitud);
             this.clasificacion = ClasificacionSismo.desdeProfundidad(profH);
+
+            // Todo evento nace auto detectado por la red (sin usuario responsable)
+            estadoActual = new AutoDetectado();
+            cambiosDeEstado.Add(new CambioEstado(fechaHora, null, estadoActual, null));
         }
 
         // Datos del evento
@@ -60,38 +64,26 @@ namespace RedSismica
         public List<SerieTemporal> getSerieTemporal() => seriesTemporales;
         public void agregarSerieTemporal(SerieTemporal st) => seriesTemporales.Add(st);
 
-        // Estados
-        public Estado? obtenerEstadoActual() => estadoActual;
+        // Estados: el evento delega cada transición en su estado actual (patrón State)
+        public Estado obtenerEstadoActual() => estadoActual;
         public IReadOnlyList<CambioEstado> getCambiosDeEstado() => cambiosDeEstado;
 
         public CambioEstado? buscarActualCE() => cambiosDeEstado.FirstOrDefault(ce => ce.sosActual());
 
-        public void crearNuevoCambioEstado(Estado nuevoEstado, Usuario usuario, DateTime fechaHora)
-        {
-            cambiosDeEstado.Add(new CambioEstado(fechaHora, null, nuevoEstado, usuario));
-            estadoActual = nuevoEstado;
-        }
+        public void bloquearEventoSismico(Usuario usuario) => estadoActual.bloquear(this, DateTime.Now, usuario);
+        public void liberarEventoSismico(Usuario usuario) => estadoActual.liberar(this, DateTime.Now, usuario);
+        public void confirmar(Usuario usuario) => estadoActual.confirmar(this, DateTime.Now, usuario);
+        public void rechazar(Usuario usuario) => estadoActual.rechazar(this, DateTime.Now, usuario);
+        public void derivarAExperto(Usuario usuario) => estadoActual.derivarAExperto(this, DateTime.Now, usuario);
 
-        public void setEstado(string descripcionNuevoEstado, Usuario usuario)
-        {
-            DateTime ahora = DateTime.Now;
-            buscarActualCE()?.setFechaHoraFin(ahora);
-            crearNuevoCambioEstado(new Estado(descripcionNuevoEstado), usuario, ahora);
+        // Usados por los estados concretos al realizar una transición
+        internal void setEstadoActual(Estado estado) => estadoActual = estado;
+        internal void agregarCambioEstado(CambioEstado cambio) => cambiosDeEstado.Add(cambio);
+        internal void setFechaHoraFin(DateTime fecha) => fechaHoraFin = fecha;
 
-            // Los estados de cierre de la revisión finalizan el evento
-            if (descripcionNuevoEstado is Estado.Confirmado or Estado.Rechazado or Estado.DerivadoAExperto)
-                fechaHoraFin = ahora;
-        }
-
-        public void bloquearEventoSismico(Usuario usuario) => setEstado(Estado.BloqueadoEnRevision, usuario);
-        public void liberarEventoSismico(Usuario usuario) => setEstado(Estado.AutoDetectado, usuario);
-        public void rechazar(Usuario usuario) => setEstado(Estado.Rechazado, usuario);
-        public void confirmar(Usuario usuario) => setEstado(Estado.Confirmado, usuario);
-        public void derivarAExperto(Usuario usuario) => setEstado(Estado.DerivadoAExperto, usuario);
-
-        public bool esEstadoActual(string estado) => estadoActual?.getDescripcion() == estado;
-        public bool esAutoDetectado() => estadoActual != null && estadoActual.esAutoDetectado();
-        public bool esBloqueadoEnRevision() => estadoActual != null && estadoActual.esBloqueadoEnRevision();
+        public bool esEstadoActual(string nombreEstado) => estadoActual.getNombre() == nombreEstado;
+        public bool esAutoDetectado() => estadoActual.esAutoDetectado();
+        public bool esBloqueadoEnRevision() => estadoActual.esBloqueadoEnRevision();
 
         // Un evento sólo puede cerrarse si tiene magnitud, alcance y origen de generación
         public bool tieneDatosCompletos() => alcance != null && origen != null && magnitud.getNumero() > 0;
@@ -112,7 +104,7 @@ namespace RedSismica
                    $"Clasificación: {clasificacion.getNombre()}\r\n" +
                    $"Alcance: {alcance?.getNombre() ?? "-"}\r\n" +
                    $"Origen: {origen?.getNombre() ?? "-"}\r\n" +
-                   $"Estado actual: {estadoActual?.getDescripcion()}";
+                   $"Estado actual: {estadoActual.getNombre()}";
         }
     }
 }

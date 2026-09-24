@@ -50,9 +50,7 @@ namespace RedSismica
 
             liberarEventoSeleccionado();
 
-            if (!evento.esAutoDetectado())
-                throw new InvalidOperationException("Sólo se pueden revisar eventos auto detectados.");
-
+            // El estado actual del evento valida la transición: sólo un evento auto detectado se puede bloquear
             bloquearEventoSismico(evento);
             eventoSeleccionado = evento;
         }
@@ -108,7 +106,7 @@ namespace RedSismica
                 case AccionDerivar: eventoSeleccionado.derivarAExperto(usuario); break;
             }
 
-            string estado = eventoSeleccionado.obtenerEstadoActual()!.getDescripcion();
+            string estado = eventoSeleccionado.obtenerEstadoActual().getNombre();
             eventoSeleccionado = null;
             return ResultadoRevision.Ok($"Resultado registrado: el evento quedó en estado \"{estado}\".");
         }

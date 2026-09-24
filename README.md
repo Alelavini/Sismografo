@@ -19,6 +19,14 @@
 
 ---
 
+## 🎯 Sobre el trabajo
+
+Trabajo práctico de la materia **Diseño de Sistemas de Información** (UTN - Facultad Regional Córdoba). Su objetivo central fue **aplicar el patrón de diseño State (GoF)** para modelar el ciclo de vida de un evento sísmico dentro del caso de uso *"Registrar resultado de revisión manual"*.
+
+En lugar de representar el estado como un texto y resolver las transiciones con condicionales, cada estado es una clase que sabe qué operaciones admite y hacia qué estado lleva cada una. El evento sísmico delega en su estado actual. [Ver cómo está implementado ↓](#-patrón-state)
+
+---
+
 ## ⚡ Probarlo
 
 ### Opción A: descargar el ejecutable (sin instalar nada)
@@ -51,7 +59,7 @@ Implementa el caso de uso **"Registrar resultado de revisión manual"** de un si
 3. Muestra el **detalle del evento**: magnitud y su descripción en la escala de Richter, clasificación por profundidad, epicentro, hipocentro, alcance y origen de generación.
 4. Muestra las **series temporales** registradas por cada estación sismológica y sismógrafo, con la velocidad de onda máxima y si se superó el umbral de alarma.
 5. Permite **ver el epicentro en un mapa** (OpenStreetMap) y **modificar los datos** del evento (magnitud, alcance, origen).
-6. Valida que el evento tenga los datos completos y **registra el resultado**. Cada cambio de estado queda en el **historial** con la fecha y el usuario responsable.
+6. Valida que el evento tenga los datos completos y **registra el resultado**. Cada cambio de estado queda en el **historial** con la fecha y el usuario responsable (la detección inicial figura a nombre del sistema).
 
 ### Ciclo de vida de un evento
 
@@ -71,13 +79,107 @@ stateDiagram-v2
 
 ---
 
-## 🏗 Diseño
+## 🧩 Patrón State
 
-La aplicación sigue el patrón **Pantalla / Gestor / Entidades** (Boundary-Control-Entity):
+### El problema
+
+Un evento sísmico pasa por varios estados, y **qué se puede hacer con él depende del estado en que está**: un evento auto detectado se puede bloquear para revisarlo, pero no confirmar; uno bloqueado se puede confirmar, rechazar, derivar o liberar; y uno ya confirmado no admite ningún cambio. Resolverlo con un atributo de texto y cadenas de `if` desparrama esas reglas por todo el código y permite transiciones inválidas.
+
+### La solución
+
+| Rol del patrón | Clase |
+|----------------|-------|
+| **Context** | `EventoSismico`: conoce su estado actual y le delega cada operación |
+| **State** (abstracto) | `Estado`: declara todas las transiciones y, por defecto, las rechaza lanzando `TransicionInvalidaException` |
+| **Concrete States** | `AutoDetectado`, `BloqueadoEnRevision`, `Confirmado`, `Rechazado`, `DerivadoAExperto`: cada uno sobrescribe sólo las transiciones válidas desde sí mismo |
+
+Cada estado concreto, al ejecutar una transición, **cierra el `CambioEstado` vigente, registra uno nuevo** con la fecha y el analista responsable, y **deja al evento en el próximo estado**. Así el historial siempre tiene un único cambio de estado vigente, y agregar un estado nuevo no requiere modificar los existentes (principio abierto/cerrado).
+
+```mermaid
+classDiagram
+    direction TB
+    class EventoSismico {
+        -estadoActual: Estado
+        -cambiosDeEstado: List~CambioEstado~
+        +bloquearEventoSismico(usuario)
+        +liberarEventoSismico(usuario)
+        +confirmar(usuario)
+        +rechazar(usuario)
+        +derivarAExperto(usuario)
+        +buscarActualCE() CambioEstado
+    }
+    class Estado {
+        <<abstract>>
+        -nombre: string
+        -ambito: string
+        +bloquear(evento, fechaHora, usuario)
+        +liberar(evento, fechaHora, usuario)
+        +confirmar(evento, fechaHora, usuario)
+        +rechazar(evento, fechaHora, usuario)
+        +derivarAExperto(evento, fechaHora, usuario)
+        #cambiarEstado(evento, proximoEstado, fechaHora, usuario)
+    }
+    class AutoDetectado {
+        +bloquear()
+    }
+    class BloqueadoEnRevision {
+        +liberar()
+        +confirmar()
+        +rechazar()
+        +derivarAExperto()
+    }
+    class Confirmado
+    class Rechazado
+    class DerivadoAExperto
+    class CambioEstado {
+        -fechaHoraInicio
+        -fechaHoraFin
+        +sosActual() bool
+    }
+
+    EventoSismico --> "1" Estado : estadoActual
+    EventoSismico --> "1..*" CambioEstado
+    CambioEstado --> Estado
+    Estado <|-- AutoDetectado
+    Estado <|-- BloqueadoEnRevision
+    Estado <|-- Confirmado
+    Estado <|-- Rechazado
+    Estado <|-- DerivadoAExperto
+```
+
+### Ejemplo: el analista rechaza un evento
+
+```mermaid
+sequenceDiagram
+    participant P as PantallaRegistrarResultado
+    participant G as GestorRegistrarResultado
+    participant E as EventoSismico
+    participant B as BloqueadoEnRevision
+    participant CE as CambioEstado
+
+    P->>G: tomarAccionConEvento("Rechazar evento")
+    G->>G: validarDatosEventoSismico()
+    G->>E: rechazar(usuario)
+    E->>B: rechazar(this, fechaHora, usuario)
+    B->>E: buscarActualCE()
+    B->>CE: setFechaHoraFin(fechaHora)
+    B->>B: new Rechazado()
+    B->>E: agregarCambioEstado(new CambioEstado(...))
+    B->>E: setEstadoActual(rechazado)
+    B->>E: setFechaHoraFin(fechaHora)
+```
+
+Si se intenta una transición que el estado actual no admite (por ejemplo, confirmar un evento que todavía no fue bloqueado para revisión), la clase base `Estado` lanza `TransicionInvalidaException` y el evento queda sin cambios.
+
+---
+
+## 🏗 Arquitectura
+
+Además del patrón State, la aplicación sigue la separación **Pantalla / Gestor / Entidades** (Boundary-Control-Entity):
 
 - **`PantallaRegistrarResultado`** (boundary): sólo presenta datos y captura las acciones del analista. No contiene reglas de negocio.
-- **`GestorRegistrarResultado`** (control): coordina el caso de uso. Filtra y ordena eventos, bloquea y libera, valida y registra el resultado.
-- **Entidades de dominio**: encapsulan las reglas. Por ejemplo, `EventoSismico` administra sus cambios de estado garantizando que haya un único estado vigente, `MagnitudRichter` deriva su descripción del valor y `ClasificacionSismo` se calcula a partir de la profundidad del hipocentro.
+- **`GestorRegistrarResultado`** (control, patrón GRASP *Controlador*): coordina el caso de uso. Filtra y ordena eventos, bloquea y libera, valida y registra el resultado.
+- **Entidades de dominio** (patrón GRASP *Experto*): encapsulan las reglas. `MagnitudRichter` deriva su descripción del valor y `ClasificacionSismo` se calcula a partir de la profundidad del hipocentro.
 
 ```mermaid
 classDiagram
@@ -89,9 +191,13 @@ classDiagram
         +tomarAccionConEvento(accion)
     }
     class EventoSismico {
-        +setEstado(estado, usuario)
         +bloquearEventoSismico(usuario)
+        +confirmar(usuario)
+        +rechazar(usuario)
         +tieneDatosCompletos()
+    }
+    class Estado {
+        <<abstract>>
     }
     class CambioEstado {
         +sosActual()
@@ -106,6 +212,7 @@ classDiagram
     GestorRegistrarResultado --> "*" EventoSismico
     GestorRegistrarResultado --> Sesion
     Sesion --> Usuario
+    EventoSismico --> "1" Estado : estadoActual
     EventoSismico --> "1..*" CambioEstado
     CambioEstado --> Estado
     CambioEstado --> Usuario
@@ -126,7 +233,8 @@ classDiagram
 ```
 Sismografo/
 ├── src/RedSismica/
-│   ├── Dominio/                  Entidades: EventoSismico, SerieTemporal, Estado, CambioEstado...
+│   ├── Dominio/                  Entidades: EventoSismico, SerieTemporal, CambioEstado...
+│   │   └── Estados/              Patrón State: Estado (abstracto) y los estados concretos
 │   ├── Interfaz/                 Pantalla principal y diálogo de modificación
 │   ├── GestorRegistrarResultado.cs   Controlador del caso de uso
 │   ├── DatosDePrueba.cs          Eventos, estaciones y sismógrafos simulados
@@ -143,7 +251,10 @@ Sismografo/
 dotnet test
 ```
 
-La suite cubre las reglas del caso de uso: filtrado y orden de eventos, bloqueo y liberación, transición a cada estado final, historial con un único estado vigente, validación de datos incompletos, acciones inválidas y clasificación por profundidad.
+La suite tiene dos partes:
+
+- **Patrón State** (`EstadosTests`): cada transición válida lleva al estado concreto correcto y cierra el cambio de estado anterior; las transiciones inválidas desde cada estado lanzan `TransicionInvalidaException` sin modificar el evento; los estados finales no admiten cambios.
+- **Caso de uso** (`GestorRegistrarResultadoTests`): filtrado y orden de eventos, bloqueo y liberación al cambiar de selección, registro de cada resultado, historial, validación de datos incompletos, acciones inválidas y clasificación por profundidad.
 
 En cada *push*, **GitHub Actions** compila la solución y corre los tests. Al publicar un tag `v*`, otro workflow genera el `.exe` autocontenido y lo adjunta a un Release.
 
