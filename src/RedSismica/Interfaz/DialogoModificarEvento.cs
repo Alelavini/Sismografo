@@ -33,26 +33,36 @@ namespace RedSismica
             comboAlcance = CrearCombo(AlcanceSismo.Nombres, alcance);
             comboOrigen = CrearCombo(OrigenDeGeneracion.Nombres, origen);
 
-            var tabla = new TableLayoutPanel { AutoSize = true, ColumnCount = 2, Dock = DockStyle.Top };
-            AgregarFila(tabla, "Magnitud (Richter)", numMagnitud);
-            AgregarFila(tabla, "Alcance", comboAlcance);
-            AgregarFila(tabla, "Origen de generación", comboOrigen);
-
-            var aceptar = new Button { Text = "Guardar", DialogResult = DialogResult.OK, AutoSize = true };
-            var cancelar = new Button { Text = "Cancelar", DialogResult = DialogResult.Cancel, AutoSize = true };
+            var aceptar = new Button { Text = "Guardar", DialogResult = DialogResult.OK, AutoSize = true, MinimumSize = new Size(90, 0) };
+            var cancelar = new Button { Text = "Cancelar", DialogResult = DialogResult.Cancel, AutoSize = true, MinimumSize = new Size(90, 0) };
             var botones = new FlowLayoutPanel
             {
                 FlowDirection = FlowDirection.RightToLeft,
-                Dock = DockStyle.Bottom,
                 AutoSize = true,
-                Padding = new Padding(0, 12, 0, 0)
+                Anchor = AnchorStyles.Right,
+                Margin = new Padding(0, 14, 0, 0)
             };
             botones.Controls.AddRange(new Control[] { cancelar, aceptar });
+
+            // Una única tabla con tamaño automático define el tamaño del diálogo
+            var tabla = new TableLayoutPanel
+            {
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                ColumnCount = 2,
+                Location = new Point(Padding.Left, Padding.Top)
+            };
+            tabla.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            tabla.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            AgregarFila(tabla, "Magnitud (Richter)", numMagnitud);
+            AgregarFila(tabla, "Alcance", comboAlcance);
+            AgregarFila(tabla, "Origen de generación", comboOrigen);
+            tabla.Controls.Add(botones);
+            tabla.SetColumnSpan(botones, 2);
 
             AcceptButton = aceptar;
             CancelButton = cancelar;
             Controls.Add(tabla);
-            Controls.Add(botones);
         }
 
         private static ComboBox CrearCombo(string[] opciones, string? seleccionado)
