@@ -1,0 +1,14 @@
+# Build
+bin/
+obj/
+publish/
+artifacts/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+
+# Resultados de tests
+TestResults/
